@@ -392,7 +392,7 @@ int mpi_read_string( mpi *X, int radix, const char *s )
     t_uint d;
     mpi T;
 
-    if( radix < 2 || radix > 16 )
+    if( radix < 2 || radix >32 )
         return( POLARSSL_ERR_MPI_BAD_INPUT_DATA );
 
     mpi_init( &T );
