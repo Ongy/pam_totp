@@ -64,10 +64,12 @@ static int get_time_slice()
 	return t / TIME_STEP;
 }
 
-static void get_hotp(const char *user, char *dst)
+static int get_hotp(const char *user, char *dst)
 {
 	uint8_t buffer[64];
+	uint8_t secbuf[64];
 	uint8_t offset;
+	size_t secsize;
 	uint64_t counter;
 	uint32_t value;
 	mpi secret;
@@ -77,9 +79,15 @@ static void get_hotp(const char *user, char *dst)
 	counter = htobe64(counter);
 
 	mpi_init(&secret);
-	mpi_read_string(&secret, 32, SECRET);
-
-	calculate_hmac_scha512((uint8_t *) secret.p, secret.n,
+	if(mpi_read_string(&secret, 32, SECRET) != 0) {
+		fprintf(stderr, "What?\n");
+		return -1;
+	}
+	if(mpi_write_binary(&secret, secbuf, sizeof(secbuf)) != 0) {
+		return -1;
+	}
+	secsize = mpi_size(&secret);
+	calculate_hmac_scha512(secbuf + (sizeof(secbuf)-secsize), secsize,
 			       (uint8_t *) &counter, 8, buffer, 64);
 	memset(secret.p, 0, secret.n);
 	mpi_free(&secret);
@@ -91,6 +99,7 @@ static void get_hotp(const char *user, char *dst)
 	value = value % 100000000;
 
 	sprintf(dst, "%08d", value);
+	return -1;
 }
 
 int main(int argc, char ** argv)

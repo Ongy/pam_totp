@@ -1,7 +1,7 @@
 TARGET=pam_totp.so
 LDFLAGS:=-lpam
 OBJECTS:=main.o sha512.o hmac.o bignum.o
-CFLAGS:=-fPIC -Wall -Wextra -fno-strict-aliasing
+CFLAGS:=-fPIC -Wall -Wextra -fno-strict-aliasing -g
 
 all: $(TARGET)
 
@@ -19,4 +19,4 @@ debug: $(TARGET)
 
 $(TARGET): $(OBJECTS)
 	ld -x --shared -o $(TARGET) $(LDFLAGS) $(OBJECTS)
-
+	$(CC) $(LDFLAGS) $(OBJECTS) -o test
