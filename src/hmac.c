@@ -35,6 +35,20 @@ static const char * NULL_TEST_SHA512 =
 	"\xDF\xB4\x9A\xD7\x38\x1E\xB0\x67\xB3\x38\xFD\x7B\x0C\xB2\x22"
 	"\x47\x22\x5D\x47";
 
+static const char * KEY_TEST_SHA512 =
+	"\x84\xFA\x5A\xA0\x27\x9B\xBC\x47\x32\x67\xD0\x5A\x53\xEA\x03"
+	"\x31\x0A\x98\x7C\xEC\xC4\xC1\x53\x5F\xF2\x9B\x6D\x76\xB8\xF1"
+	"\x44\x4A\x72\x8D\xF3\xAA\xDB\x89\xD4\xA9\xA6\x70\x9E\x19\x98"
+	"\xF3\x73\x56\x6E\x8F\x82\x4A\x8C\xA9\x3B\x18\x21\xF0\xB6\x9B"
+	"\xC2\xA2\xF6\x5E";
+
+static const char * FULL_TEST_SHA512 =
+	"\x86\x95\x1D\xC7\x65\xBE\xF9\x5F\x94\x74\x66\x9C\xD1\x8D\xF7"
+	"\x70\x5D\x99\xAE\x47\xEA\x3E\x76\xA2\xCA\x4C\x22\xF7\x16\x56"
+	"\xF4\x2E\xA6\x6E\x3A\xCD\xC8\x98\xC9\x3F\x47\x50\x09\xFA\x59"
+	"\x9D\x0B\xB8\x3B\xD5\x36\x5F\x36\xA9\xCB\x92\xC5\x70\x70\x8F"
+	"\x8D\xE5\xFA\xE8";
+
 static const char * NULL_TEST_SHA1 =
 	"\xFB\xDB\x1D\x1B\x18\xAA\x6C\x08\x32\x4B\x7D\x64\xB7\x1F\xB7"
 	"\x63\x70\x69\x0E\x1D";
@@ -164,12 +178,33 @@ int run_hmac_tests()
 		fprintf(stderr, "hmac1 failed\n");
 		return 0;
 	}
+	fprintf(stdout, "hmac1 test ok\n");
 
 	calculate_hmac_sha512(NULL, 0, NULL, 0, buffer, sizeof(buffer));
 	ret = memcmp(buffer, NULL_TEST_SHA512, sizeof(buffer));
 	if(ret != 0) {
-		fprintf(stderr, "hmac512 failed\n");
+		fprintf(stderr, "hmac512 null failed\n");
 		return 0;
 	}
+	fprintf(stdout, "hmac512 null test ok\n");
+
+	calculate_hmac_sha512((uint8_t *)"key", 3, NULL, 0,
+			      buffer, sizeof(buffer));
+	ret = memcmp(buffer, KEY_TEST_SHA512, sizeof(buffer));
+	if(ret != 0) {
+		fprintf(stderr, "hmac512 key failed\n");
+		return 0;
+	}
+	fprintf(stdout, "hmac512 key test ok\n");
+
+	calculate_hmac_sha512((uint8_t *)"key", 3, (uint8_t *)"value", 5,
+			      buffer, sizeof(buffer));
+	ret = memcmp(buffer, FULL_TEST_SHA512, sizeof(buffer));
+	if(ret != 0) {
+		fprintf(stderr, "hmac512 full failed\n");
+		return 0;
+	}
+	fprintf(stdout, "hmac512 full test ok\n");
+
 	return 1;
 }
