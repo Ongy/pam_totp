@@ -1,4 +1,5 @@
-void run_htop_tests();
+
+void run_hotp_tests();
 
 int main(int argc, char ** argv)
 {

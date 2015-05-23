@@ -17,6 +17,7 @@
 #include "sha512.h"
 
 #define DEFAULT_USER "nobody"
+#define WINDOW 1
 
 #define TIME_STEP 30
 
@@ -123,8 +124,29 @@ void run_hotp_tests()
 {
 	char buffer[9];
 
-	get_hotp("12345678901234567890", 20, 1, buffer, sizeof(buffer));
+	get_hotp((uint8_t *)"12345678901234567890", 20, 1, buffer,
+								sizeof(buffer));
 	printf("%s\n", buffer);
+}
+
+int is_valid_token(const char * user, const char *token)
+{
+	uint8_t buffer[128];
+	char tok[9];
+	size_t len;
+	int i;
+	int slice;
+
+	slice = get_time_slice();
+
+	len = get_hashdata(user, buffer, sizeof(buffer));
+
+	for(i = -WINDOW; i < 0; ++i) {
+		get_hotp(buffer, len, slice + i, tok, sizeof(tok));
+		if(!strcmp(token, tok))
+			return 1;
+	}
+	return 0;
 }
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
@@ -167,7 +189,8 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 
 	pam_syslog(pamh, LOG_AUTH | LOG_WARNING, "Token: %s\n", buffer);
 
-	//get_hotp(user, hotp);
+	if(!is_valid_token(user, buffer))
+		retval = PAM_AUTH_ERR;
 
 	pam_syslog(pamh, LOG_AUTH | LOG_WARNING, "Hotp: %s\n", hotp);
 
