@@ -195,7 +195,7 @@ int run_totp_tests()
 		fprintf(stderr, "totp sha1 failed\n");
 		return 0;
 	}
-	fprintf(stdout, "Hopt sha1 test ok\n");
+	fprintf(stdout, "Topt sha1 test ok\n");
 
 	get_totp_sha512((uint8_t *)"12345678901234567890", 20, 1, buffer,
 								sizeof(buffer));
@@ -204,7 +204,7 @@ int run_totp_tests()
 		fprintf(stderr, "totp sha512 failed\n");
 		return 0;
 	}
-	fprintf(stdout, "Hopt sha512 test ok\n");
+	fprintf(stdout, "Topt sha512 test ok\n");
 	return 1;
 }
 
