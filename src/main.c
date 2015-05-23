@@ -109,46 +109,103 @@ static size_t get_hashdata(const char * user, uint8_t * buffer, size_t maxlen)
 	return secsize;
 }
 
-static int get_totp_hmac(const uint8_t *secret, size_t len, uint64_t time,
-			 uint8_t *dst, size_t maxlen)
+static int get_truncate(const uint8_t * hash, size_t len, char * buffer,
+			size_t maxlen)
+{
+	uint32_t value;
+	uint8_t offset;
+	offset = hash[len-1] & 0x0F;
+	value = *((uint32_t *) (hash+offset));
+	value = be32toh(value) & 0x7FFFFFFF;
+	value %= 100000000;
+
+	return snprintf(buffer, maxlen, "%08d", value);
+}
+
+
+static int get_totp_hmac_sha512(const uint8_t *secret, size_t len,
+				uint64_t time, uint8_t *dst, size_t maxlen)
 {
 	uint64_t counter;
 
 	/*TODO move this to the beginning of the module */
 	counter = htobe64(time);
 
-	return calculate_hmac_sha512(secret, len, (uint8_t *) &counter, 8, dst,
-				     maxlen);
+	return calculate_hmac_sha512(secret, len, (uint8_t *) &counter,
+				     sizeof(counter), dst, maxlen);
 }
 
-static int get_totp(const uint8_t * hashdata, size_t len, uint64_t time,
+static int get_totp_sha512(const uint8_t * hashdata, size_t len, uint64_t time,
 		    char * dst, size_t maxlen)
 {
 	uint8_t buffer[64];
-	uint32_t value;
-	uint8_t offset;
 
 	memset(buffer, 0, sizeof(buffer));
 
-	get_totp_hmac(hashdata, len, time, buffer, sizeof(buffer));
+	get_totp_hmac_sha512(hashdata, len, time, buffer, sizeof(buffer));
 
-	offset = buffer[63] & 0x0F;
-	value = *((uint32_t *) (buffer+offset));
-	value = be32toh(value) & 0x7FFFFFFF;
-	value %= 100000000;
+	return get_truncate(buffer, sizeof(buffer), dst, maxlen);
+}
 
-	return snprintf(dst, maxlen, "%d", value);
+static int get_totp_hmac_sha1(const uint8_t *secret, size_t len,
+			      uint64_t time, uint8_t *dst, size_t maxlen)
+{
+	uint64_t counter;
+
+	/*TODO move this to the beginning of the module */
+	counter = htobe64(time);
+
+	return calculate_hmac_sha1(secret, len, (uint8_t *) &counter,
+				     sizeof(counter), dst, maxlen);
+}
+
+static int get_totp_sha1(const uint8_t * hashdata, size_t len, uint64_t time,
+		    char * dst, size_t maxlen)
+{
+	uint8_t buffer[20];
+
+	memset(buffer, 0, sizeof(buffer));
+
+	get_totp_hmac_sha1(hashdata, len, time, buffer, sizeof(buffer));
+
+	return get_truncate(buffer, sizeof(buffer), dst, maxlen);
 }
 
 int run_totp_tests()
 {
+	uint8_t hash[20];
 	char buffer[9];
+	uint64_t count = 0;
+	int ret;
 
+	calculate_hmac_sha1((uint8_t *)"12345678901234567890", 20,
+			    (uint8_t *) &count, sizeof(count), hash, 20);
+	get_truncate(hash, sizeof(hash), buffer, sizeof(buffer));
+	ret = strcmp(buffer+2, "755224");
+	if(ret != 0) {
+		fprintf(stderr, "hotp failed\n");
+		return 0;
+	}
+	fprintf(stdout, "Hopt test ok\n");
 
-	get_totp((uint8_t *)"12345678901234567890", 20, 1, buffer,
+	get_totp_sha1((uint8_t *)"12345678901234567890", 20, 1, buffer,
 								sizeof(buffer));
+	ret = strcmp(buffer, "94287082");
+	if(ret != 0) {
+		fprintf(stderr, "totp sha1 failed\n");
+		return 0;
+	}
+	fprintf(stdout, "Hopt sha1 test ok\n");
 
-	return strcmp(buffer, "90693936") == 0;
+	get_totp_sha512((uint8_t *)"12345678901234567890", 20, 1, buffer,
+								sizeof(buffer));
+	ret = strcmp(buffer, "90693936");
+	if(ret != 0) {
+		fprintf(stderr, "totp sha512 failed\n");
+		return 0;
+	}
+	fprintf(stdout, "Hopt sha512 test ok\n");
+	return 1;
 }
 
 int is_valid_token(const char * user, const char *token)
@@ -164,7 +221,7 @@ int is_valid_token(const char * user, const char *token)
 	len = get_hashdata(user, buffer, sizeof(buffer));
 
 	for(i = -WINDOW; i < 0; ++i) {
-		get_totp(buffer, len, slice + i, tok, sizeof(tok));
+		get_totp_sha512(buffer, len, slice + i, tok, sizeof(tok));
 		if(!strcmp(token, tok))
 			return 1;
 	}

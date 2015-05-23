@@ -28,12 +28,16 @@
 #include "sha512.h"
 #include "sha1.h"
 
-static const char * NULL_TEST =
+static const char * NULL_TEST_SHA512 =
 	"\xB9\x36\xCE\xE8\x6C\x9F\x87\xAA\x5D\x3C\x6F\x2E\x84\xCB\x5A"
 	"\x42\x39\xA5\xFE\x50\x48\x0A\x6E\xC6\x6B\x70\xAB\x5B\x1F\x4A"
 	"\xC6\x73\x0C\x6C\x51\x54\x21\xB3\x27\xEC\x1D\x69\x40\x2E\x53"
 	"\xDF\xB4\x9A\xD7\x38\x1E\xB0\x67\xB3\x38\xFD\x7B\x0C\xB2\x22"
 	"\x47\x22\x5D\x47";
+
+static const char * NULL_TEST_SHA1 =
+	"\xFB\xDB\x1D\x1B\x18\xAA\x6C\x08\x32\x4B\x7D\x64\xB7\x1F\xB7"
+	"\x63\x70\x69\x0E\x1D";
 
 static void apply_padding(uint8_t * data, size_t size, uint8_t pad)
 {
@@ -78,7 +82,7 @@ int calculate_hmac_sha512(const uint8_t * key, size_t keysize,
 	uint8_t outbuffer[64];
 	int ret;
 
-	if (maxlen < 64)
+	if (maxlen < sizeof(outbuffer))
 		return -1;
 	ret = 0;
 	hashbuffer = calloc(sizeof(keybuffer) + (msgsize > sizeof(outbuffer) ?
@@ -118,7 +122,7 @@ int calculate_hmac_sha1(const uint8_t * key, size_t keysize,
 	uint8_t outbuffer[20];
 	int ret;
 
-	if (maxlen < 64)
+	if (maxlen < sizeof(outbuffer))
 		return -1;
 	ret = 0;
 	hashbuffer = calloc(sizeof(keybuffer) + (msgsize > sizeof(outbuffer) ?
@@ -148,11 +152,24 @@ int calculate_hmac_sha1(const uint8_t * key, size_t keysize,
 	free(hashbuffer);
 	return ret;
 }
+
 int run_hmac_tests()
 {
 	uint8_t buffer[64];
+	int ret;
+
+	calculate_hmac_sha1(NULL, 0, NULL, 0, buffer, sizeof(buffer));
+	ret = memcmp(buffer, NULL_TEST_SHA1, 20);
+	if(ret != 0) {
+		fprintf(stderr, "hmac1 failed\n");
+		return 0;
+	}
 
 	calculate_hmac_sha512(NULL, 0, NULL, 0, buffer, sizeof(buffer));
-
-	return memcmp(buffer, NULL_TEST, sizeof(buffer)) == 0;
+	ret = memcmp(buffer, NULL_TEST_SHA512, sizeof(buffer));
+	if(ret != 0) {
+		fprintf(stderr, "hmac512 failed\n");
+		return 0;
+	}
+	return 1;
 }
