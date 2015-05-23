@@ -3,3 +3,4 @@ script: make && ./test
 compiler:
   - clang
   - gcc
+install: sudo apt-get install libpam-dev
