@@ -1,6 +1,6 @@
 TARGET=pam_totp.so
 LDFLAGS:=-lpam
-OBJECTS:=main.o sha512.o
+OBJECTS:=main.o sha512.o hmac.o
 CFLAGS:=-fPIC -Wall -Wextra
 
 all: $(TARGET)
