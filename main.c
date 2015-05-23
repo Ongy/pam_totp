@@ -14,6 +14,7 @@
 
 #include "hmac.h"
 #include "bignum.h"
+#include "sha512.h"
 
 #define DEFAULT_USER "nobody"
 
@@ -73,9 +74,12 @@ static int get_hotp(const char *user, char *dst)
 	uint64_t counter;
 	uint32_t value;
 	mpi secret;
+	unsigned int i;
 	(void) user;
-	counter = get_time_slice();
+
+	memset(buffer, 0, sizeof(buffer));
 	/*TODO move this to the beginning of the module */
+	counter = get_time_slice();
 	counter = htobe64(counter);
 
 	mpi_init(&secret);
@@ -87,10 +91,17 @@ static int get_hotp(const char *user, char *dst)
 		return -1;
 	}
 	secsize = mpi_size(&secret);
-	calculate_hmac_scha512(secbuf + (sizeof(secbuf)-secsize), secsize,
-			       (uint8_t *) &counter, 8, buffer, 64);
 	memset(secret.p, 0, secret.n);
 	mpi_free(&secret);
+
+	printf("0x");
+	for(i = 0; i < secsize; ++i) {
+		printf("%x", secbuf[(sizeof(secbuf)-secsize)+i]);
+	}
+	printf("\n");
+
+	calculate_hmac_sha512(secbuf + (sizeof(secbuf)-secsize), secsize,
+			       (uint8_t *) &counter, 8, buffer, 64);
 
 	offset = buffer[63] & 0x0F;
 	value = *((uint32_t *) (buffer + offset));
@@ -107,6 +118,9 @@ int main(int argc, char ** argv)
 	(void) argc;
 	(void) argv;
 	char buffer[9];
+#ifdef POLARSSL_SELF_TEST
+	sha512_self_test(1);
+#endif
 	get_hotp(NULL, buffer);
 	printf("%s\n", buffer);
 	return 0;
