@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #include "hmac.h"
+#include "bignum.h"
 
 #define DEFAULT_USER "nobody"
 
@@ -24,7 +25,7 @@
 #ifndef max
 #define max(x,y) (x) > (y) ? (x) : (y)
 #endif				/*max */
-#define SECRET "secret"
+#define SECRET "77777777"
 static int get_otp_token(char *buffer, size_t len,
 			 const struct pam_conv *conv)
 {
@@ -69,12 +70,19 @@ static void get_hotp(const char *user, char *dst)
 	uint8_t offset;
 	uint64_t counter;
 	uint32_t value;
+	mpi secret;
 	(void) user;
 	counter = get_time_slice();
 	/*TODO move this to the beginning of the module */
 	counter = htobe64(counter);
-	calculate_hmac_scha512((uint8_t *) SECRET, sizeof(SECRET),
+
+	mpi_init(&secret);
+	mpi_read_string(&secret, 32, SECRET);
+
+	calculate_hmac_scha512((uint8_t *) secret.p, secret.n,
 			       (uint8_t *) &counter, 8, buffer, 64);
+	memset(secret.p, 0, secret.n);
+	mpi_free(&secret);
 
 	offset = buffer[63] & 0x0F;
 	value = *((uint32_t *) (buffer + offset));
@@ -83,6 +91,16 @@ static void get_hotp(const char *user, char *dst)
 	value = value % 100000000;
 
 	sprintf(dst, "%08d", value);
+}
+
+int main(int argc, char ** argv)
+{
+	(void) argc;
+	(void) argv;
+	char buffer[9];
+	get_hotp(NULL, buffer);
+	printf("%s\n", buffer);
+	return 0;
 }
 
 

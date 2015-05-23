@@ -26,7 +26,7 @@
  *  http://www.stillhq.com/extracted/gnupg-api/mpi/
  *  http://math.libtomcrypt.com/files/tommath.pdf
  */
-
+#define POLARSSL_BIGNUM_C
 #if defined(POLARSSL_BIGNUM_C)
 
 #include "bignum.h"
