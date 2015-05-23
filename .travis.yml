@@ -1,6 +1,7 @@
 language: c
 script: make && ./test
 compiler:
-  - clang
   - gcc
+  - clang
+
 install: sudo apt-get install libpam-dev
