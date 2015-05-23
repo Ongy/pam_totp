@@ -34,4 +34,4 @@
 # vim files
 *.swp
 
-test
+test/test

@@ -89,7 +89,7 @@ static size_t get_hashdata(const char * user, uint8_t * buffer, size_t maxlen)
 	return secsize;
 }
 
-static int get_hotp_hmac(const uint8_t *secret, size_t len, uint64_t time,
+static int get_totp_hmac(const uint8_t *secret, size_t len, uint64_t time,
 			 uint8_t *dst, size_t maxlen)
 {
 	uint64_t counter;
@@ -101,7 +101,7 @@ static int get_hotp_hmac(const uint8_t *secret, size_t len, uint64_t time,
 				     maxlen);
 }
 
-static int get_hotp(const uint8_t * hashdata, size_t len, uint64_t time,
+static int get_totp(const uint8_t * hashdata, size_t len, uint64_t time,
 		    char * dst, size_t maxlen)
 {
 	uint8_t buffer[64];
@@ -110,7 +110,7 @@ static int get_hotp(const uint8_t * hashdata, size_t len, uint64_t time,
 
 	memset(buffer, 0, sizeof(buffer));
 
-	get_hotp_hmac(hashdata, len, time, buffer, sizeof(buffer));
+	get_totp_hmac(hashdata, len, time, buffer, sizeof(buffer));
 
 	offset = buffer[63] & 0x0F;
 	value = *((uint32_t *) (buffer+offset));
@@ -120,12 +120,12 @@ static int get_hotp(const uint8_t * hashdata, size_t len, uint64_t time,
 	return snprintf(dst, maxlen, "%d", value);
 }
 
-int run_hotp_tests()
+int run_totp_tests()
 {
 	char buffer[9];
 
 
-	get_hotp((uint8_t *)"12345678901234567890", 20, 1, buffer,
+	get_totp((uint8_t *)"12345678901234567890", 20, 1, buffer,
 								sizeof(buffer));
 
 	return strcmp(buffer, "90693936") == 0;
@@ -144,7 +144,7 @@ int is_valid_token(const char * user, const char *token)
 	len = get_hashdata(user, buffer, sizeof(buffer));
 
 	for(i = -WINDOW; i < 0; ++i) {
-		get_hotp(buffer, len, slice + i, tok, sizeof(tok));
+		get_totp(buffer, len, slice + i, tok, sizeof(tok));
 		if(!strcmp(token, tok))
 			return 1;
 	}
@@ -156,7 +156,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 {
 	int retval;
 	char buffer[17];
-	char hotp[9];
+	char totp[9];
 	const struct pam_conv *conv;
 	const char *user;
 
@@ -194,7 +194,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 	if(!is_valid_token(user, buffer))
 		retval = PAM_AUTH_ERR;
 
-	pam_syslog(pamh, LOG_AUTH | LOG_WARNING, "Hotp: %s\n", hotp);
+	pam_syslog(pamh, LOG_AUTH | LOG_WARNING, "Hotp: %s\n", totp);
 
 	user = NULL;
 

@@ -1,14 +1,17 @@
 TARGET=pam_totp.so
+TEST=test/test
 LDFLAGS:=-lpam
-OBJECTS:=main.o sha512.o hmac.o bignum.o
-CFLAGS+=-fPIC -Wall -Wextra -fno-strict-aliasing -g
+OBJECTS:=src/main.o src/sha512.o src/hmac.o src/bignum.o
+TEST_OBJECTS:=test/test.o
+CFLAGS+=-fPIC -Wall -Wextra -fno-strict-aliasing -g -Iinclude
 
-all: $(TARGET) test
+all: $(TARGET) $(TEST)
 
 clean:
 	-rm -f $(TARGET)
-	-rm $(OBJECTS)
-	-rm -f test test.o
+	-rm -f $(OBJECTS)
+	-rm -f $(TEST)
+	-rm -f $(TEST_OBJECTS)
 
 
 fresh: clean all
@@ -16,10 +19,13 @@ fresh: clean all
 debug: CFLAGS += -ggdb -DDEBUG
 debug: $(TARGET)
 
-.PHONY: fresh debug all clean
+.PHONY: fresh debug all clean test
 
 $(TARGET): $(OBJECTS)
 	ld -x --shared -o $(TARGET) $(OBJECTS) $(LDFLAGS)
 
-test: $(OBJECTS) test.o
-	$(CC) $(OBJECTS) test.o -o test $(LDFLAGS)
+$(TEST): $(OBJECTS) $(TEST_OBJECTS)
+	$(CC) $(OBJECTS) $(TEST_OBJECTS) -o $(TEST) $(LDFLAGS)
+
+test: $(TEST)
+	./$(TEST)
