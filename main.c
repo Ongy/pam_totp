@@ -80,6 +80,7 @@ static int get_hotp(const char *user, char *dst)
 	memset(buffer, 0, sizeof(buffer));
 	/*TODO move this to the beginning of the module */
 	counter = get_time_slice();
+	counter = 1;
 	counter = htobe64(counter);
 
 	mpi_init(&secret);
@@ -91,23 +92,23 @@ static int get_hotp(const char *user, char *dst)
 		return -1;
 	}
 	secsize = mpi_size(&secret);
-	memset(secret.p, 0, secret.n);
 	mpi_free(&secret);
 
-	printf("0x");
-	for(i = 0; i < secsize; ++i) {
-		printf("%x", secbuf[(sizeof(secbuf)-secsize)+i]);
-	}
-	printf("\n");
+//	calculate_hmac_sha512(secbuf + (sizeof(secbuf)-secsize), secsize,
+//			       (uint8_t *) &counter, 8, buffer, 64);
 
-	calculate_hmac_sha512(secbuf + (sizeof(secbuf)-secsize), secsize,
+	calculate_hmac_sha512("12345678901234567890", strlen("12345678901234567890"),
 			       (uint8_t *) &counter, 8, buffer, 64);
+
+	for(i = 0; i < 64; ++i)
+		printf("%02X", buffer[i]);
+	printf("\n");
 
 	offset = buffer[63] & 0x0F;
 	value = *((uint32_t *) (buffer + offset));
 	value = be32toh(value);
 	value &= 0x7FFFFFFF;
-	value = value % 100000000;
+	value %= 100000000;
 
 	sprintf(dst, "%08d", value);
 	return -1;
