@@ -3,12 +3,16 @@
 #include <security/pam_modules.h>
 #include <security/pam_appl.h>
 #include <security/pam_ext.h>
-#include <syslog.h>
+#include <endian.h>
 #include <inttypes.h>
-#include <unistd.h>
-#include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
 #include <time.h>
+#include <unistd.h>
+
+#include "hmac.h"
 
 #define DEFAULT_USER "nobody"
 
@@ -59,6 +63,27 @@ static int get_time_slice()
 	return t / TIME_STEP;
 }
 
+static void get_hotp(const char *user, char *dst)
+{
+	uint8_t buffer[64];
+	uint8_t offset;
+	uint64_t counter;
+	uint32_t value;
+	(void) user;
+	counter = get_time_slice();
+	/*TODO move this to the beginning of the module */
+	counter = htobe64(counter);
+	calculate_hmac_scha512((uint8_t *) SECRET, sizeof(SECRET),
+			       (uint8_t *) &counter, 8, buffer, 64);
+
+	offset = buffer[63] & 0x0F;
+	value = *((uint32_t *) (buffer + offset));
+	value = be32toh(value);
+	value &= 0x7FFFFFFF;
+	value = value % 100000000;
+
+	sprintf(dst, "%08d", value);
+}
 
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
@@ -66,6 +91,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 {
 	int retval;
 	char buffer[17];
+	char hotp[9];
 	const struct pam_conv *conv;
 	const char *user;
 
@@ -99,6 +125,10 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 	}
 
 	pam_syslog(pamh, LOG_AUTH | LOG_WARNING, "Token: %s\n", buffer);
+
+	get_hotp(user, hotp);
+
+	pam_syslog(pamh, LOG_AUTH | LOG_WARNING, "Hotp: %s\n", hotp);
 
 	user = NULL;
 
