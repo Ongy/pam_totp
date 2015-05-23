@@ -120,13 +120,15 @@ static int get_hotp(const uint8_t * hashdata, size_t len, uint64_t time,
 	return snprintf(dst, maxlen, "%d", value);
 }
 
-void run_hotp_tests()
+int run_hotp_tests()
 {
 	char buffer[9];
 
+
 	get_hotp((uint8_t *)"12345678901234567890", 20, 1, buffer,
 								sizeof(buffer));
-	printf("%s\n", buffer);
+
+	return strcmp(buffer, "90693936") == 0;
 }
 
 int is_valid_token(const char * user, const char *token)

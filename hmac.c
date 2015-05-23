@@ -6,6 +6,13 @@
 
 #include "sha512.h"
 
+static const char * NULL_TEST =
+	"\xB9\x36\xCE\xE8\x6C\x9F\x87\xAA\x5D\x3C\x6F\x2E\x84\xCB\x5A"
+	"\x42\x39\xA5\xFE\x50\x48\x0A\x6E\xC6\x6B\x70\xAB\x5B\x1F\x4A"
+	"\xC6\x73\x0C\x6C\x51\x54\x21\xB3\x27\xEC\x1D\x69\x40\x2E\x53"
+	"\xDF\xB4\x9A\xD7\x38\x1E\xB0\x67\xB3\x38\xFD\x7B\x0C\xB2\x22"
+	"\x47\x22\x5D\x47";
+
 static void apply_padding(uint8_t * data, size_t size, uint8_t pad)
 {
 	unsigned i, j;
@@ -78,4 +85,13 @@ int calculate_hmac_sha512(const uint8_t * key, size_t keysize,
 
 	free(hashbuffer);
 	return ret;
+}
+
+int run_hmac_tests()
+{
+	uint8_t buffer[64];
+
+	calculate_hmac_sha512(NULL, 0, NULL, 0, buffer, sizeof(buffer));
+
+	return memcmp(buffer, NULL_TEST, sizeof(buffer)) == 0;
 }
