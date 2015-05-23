@@ -1,7 +1,7 @@
 TARGET=pam_totp.so
 LDFLAGS:=-lpam
 OBJECTS:=main.o sha512.o hmac.o bignum.o
-CFLAGS:=-fPIC -Wall -Wextra -fno-strict-aliasing -g
+CFLAGS+=-fPIC -Wall -Wextra -fno-strict-aliasing -g
 
 all: $(TARGET)
 

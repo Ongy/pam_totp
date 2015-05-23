@@ -9,7 +9,7 @@
  * This function calculates the hmac of the key and message given as arguments
  * This function writes the hmac into dst and does check for buffer overflow
  */
-int calculate_hmac_scha512(uint8_t * key, size_t keysize,
+int calculate_hmac_sha512(uint8_t * key, size_t keysize,
 			   uint8_t * message, size_t msgsize,
 			   uint8_t * dst, size_t maxlen);
 

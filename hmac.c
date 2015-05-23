@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "sha512.h"
 
@@ -19,9 +20,9 @@ static void apply_padding(uint8_t * data, size_t size, uint8_t pad)
 	xor64p = (uint64_t *) data;
 
 	for (i = 0; i < 4; ++i) {
-		xor32 |= pad << i;
+		xor32 |= ((uint32_t) pad) << (i * 8);
 	}
-	xor64 = xor32 | ((uint64_t) xor32) << 4;
+	xor64 = xor32 | (((uint64_t) xor32) << 32);
 
 	for (i = 0; i < size / sizeof(void *); ++i) {
 		if (sizeof(void *) == 4) {
@@ -39,38 +40,41 @@ static void apply_padding(uint8_t * data, size_t size, uint8_t pad)
 	}
 }
 
-int calculate_hmac_scha512(uint8_t * key, size_t keysize,
+int calculate_hmac_sha512(uint8_t * key, size_t keysize,
 			   uint8_t * message, size_t msgsize,
 			   uint8_t * dst, size_t maxlen)
 {
 	uint8_t *hashbuffer;
-	uint8_t keybuffer[1024];
+	uint8_t keybuffer[128];
 	uint8_t outbuffer[64];
 	int ret;
 
 	if (maxlen < 64)
 		return -1;
 	ret = 0;
-	hashbuffer = calloc(msgsize > 1024 ? msgsize + 1024 : 2048, 1);
-	memset(keybuffer, 0, 1024);
+	hashbuffer =
+	    calloc(msgsize > sizeof(keybuffer) ?
+		   msgsize + sizeof(keybuffer) : sizeof(keybuffer) * 2, 1);
+	memset(keybuffer, 0, sizeof(keybuffer));
 
-	if (keysize > 1024) {
+	if (keysize > sizeof(keybuffer)) {
 		sha512(key, keysize, keybuffer, 0);
 	} else {
 		memcpy(keybuffer, key, keysize);
 	}
 
-	memcpy(keybuffer, hashbuffer, 1024);
-	apply_padding(hashbuffer, 1024, 0x36);
-	memcpy(hashbuffer + 1024, message, msgsize);
+	memcpy(hashbuffer, keybuffer, sizeof(keybuffer));
+	apply_padding(hashbuffer, sizeof(keybuffer), 0x36);
+	memcpy(hashbuffer + sizeof(keybuffer), message, msgsize);
 
-	sha512(hashbuffer, 1024 + msgsize, outbuffer, 0);
+	sha512(hashbuffer, sizeof(keybuffer) + msgsize, outbuffer, 0);
 
-	memcpy(keybuffer, hashbuffer, 1024);
-	apply_padding(hashbuffer, 1024, 0x5c);
-	memcpy(hashbuffer + 1024, outbuffer, sizeof(outbuffer));
+	memcpy(hashbuffer, keybuffer, sizeof(keybuffer));
+	apply_padding(hashbuffer, sizeof(keybuffer), 0x5c);
+	memcpy(hashbuffer + sizeof(keybuffer), outbuffer, sizeof(outbuffer));
 
-	sha512(hashbuffer, 1024 + sizeof(outbuffer), dst, 0);
+
+	sha512(hashbuffer, sizeof(keybuffer) + sizeof(outbuffer), dst, 0);
 
 	free(hashbuffer);
 	return ret;
