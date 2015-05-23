@@ -19,7 +19,7 @@ debug: $(TARGET)
 .PHONY: fresh debug all clean
 
 $(TARGET): $(OBJECTS)
-	ld -x --shared -o $(TARGET) $(LDFLAGS) $(OBJECTS)
+	ld -x --shared -o $(TARGET) $(OBJECTS) $(LDFLAGS)
 
 test: $(OBJECTS) test.o
-	$(CC) $(LDFLAGS) $(OBJECTS) test.o -o test
+	$(CC) $(OBJECTS) test.o -o test $(LDFLAGS)
