@@ -65,68 +65,67 @@ static int get_time_slice()
 	return t / TIME_STEP;
 }
 
-static int get_hotp(const char *user, char *dst)
+static size_t get_hashdata(const char * user, uint8_t * buffer, size_t maxlen)
 {
-	uint8_t buffer[64];
-	uint8_t secbuf[64];
-	uint8_t offset;
-	size_t secsize;
-	uint64_t counter;
-	uint32_t value;
 	mpi secret;
-	unsigned int i;
+	size_t secsize;
+
 	(void) user;
-
-	memset(buffer, 0, sizeof(buffer));
-	/*TODO move this to the beginning of the module */
-	counter = get_time_slice();
-	counter = 1;
-	counter = htobe64(counter);
-
 	mpi_init(&secret);
 	if(mpi_read_string(&secret, 32, SECRET) != 0) {
 		fprintf(stderr, "What?\n");
 		return -1;
 	}
-	if(mpi_write_binary(&secret, secbuf, sizeof(secbuf)) != 0) {
-		return -1;
+	if(mpi_size(&secret) <= maxlen) {
+		if(mpi_write_binary(&secret, buffer, maxlen) != 0) {
+			mpi_free(&secret);
+			return -1;
+		}
 	}
 	secsize = mpi_size(&secret);
 	mpi_free(&secret);
 
-//	calculate_hmac_sha512(secbuf + (sizeof(secbuf)-secsize), secsize,
-//			       (uint8_t *) &counter, 8, buffer, 64);
+	return secsize;
+}
 
-	calculate_hmac_sha512("12345678901234567890", strlen("12345678901234567890"),
-			       (uint8_t *) &counter, 8, buffer, 64);
+static int get_hotp_hmac(const uint8_t *secret, size_t len, uint64_t time,
+			 uint8_t *dst, size_t maxlen)
+{
+	uint64_t counter;
 
-	for(i = 0; i < 64; ++i)
-		printf("%02X", buffer[i]);
-	printf("\n");
+	/*TODO move this to the beginning of the module */
+	counter = htobe64(time);
+
+	return calculate_hmac_sha512(secret, len, (uint8_t *) &counter, 8, dst,
+				     maxlen);
+}
+
+static int get_hotp(const uint8_t * hashdata, size_t len, uint64_t time,
+		    char * dst, size_t maxlen)
+{
+	uint8_t buffer[64];
+	uint32_t value;
+	uint8_t offset;
+
+	memset(buffer, 0, sizeof(buffer));
+
+	get_hotp_hmac(hashdata, len, time, buffer, sizeof(buffer));
 
 	offset = buffer[63] & 0x0F;
-	value = *((uint32_t *) (buffer + offset));
-	value = be32toh(value);
-	value &= 0x7FFFFFFF;
+	value = *((uint32_t *) (buffer+offset));
+	value = be32toh(value) & 0x7FFFFFFF;
 	value %= 100000000;
 
-	sprintf(dst, "%08d", value);
-	return -1;
+	return snprintf(dst, maxlen, "%d", value);
 }
 
-int main(int argc, char ** argv)
+void run_hotp_tests()
 {
-	(void) argc;
-	(void) argv;
 	char buffer[9];
-#ifdef POLARSSL_SELF_TEST
-	sha512_self_test(1);
-#endif
-	get_hotp(NULL, buffer);
-	printf("%s\n", buffer);
-	return 0;
-}
 
+	get_hotp("12345678901234567890", 20, 1, buffer, sizeof(buffer));
+	printf("%s\n", buffer);
+}
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 				   int argc, const char **argv)
@@ -168,7 +167,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 
 	pam_syslog(pamh, LOG_AUTH | LOG_WARNING, "Token: %s\n", buffer);
 
-	get_hotp(user, hotp);
+	//get_hotp(user, hotp);
 
 	pam_syslog(pamh, LOG_AUTH | LOG_WARNING, "Hotp: %s\n", hotp);
 
