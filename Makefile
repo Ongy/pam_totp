@@ -1,7 +1,7 @@
 TARGET=pam_totp.so
 TEST=test/test
 LDFLAGS:=-lpam
-OBJECTS:=src/main.o src/sha512.o src/hmac.o src/bignum.o
+OBJECTS:=src/main.o src/sha512.o src/hmac.o src/bignum.o src/sha1.o
 TEST_OBJECTS:=test/test.o
 CFLAGS+=-fPIC -Wall -Wextra -fno-strict-aliasing -g -Iinclude
 

@@ -26,6 +26,7 @@
 #include <stdio.h>
 
 #include "sha512.h"
+#include "sha1.h"
 
 static const char * NULL_TEST =
 	"\xB9\x36\xCE\xE8\x6C\x9F\x87\xAA\x5D\x3C\x6F\x2E\x84\xCB\x5A"
@@ -108,6 +109,45 @@ int calculate_hmac_sha512(const uint8_t * key, size_t keysize,
 	return ret;
 }
 
+int calculate_hmac_sha1(const uint8_t * key, size_t keysize,
+			const uint8_t * message, size_t msgsize,
+			uint8_t * dst, size_t maxlen)
+{
+	uint8_t *hashbuffer;
+	uint8_t keybuffer[64];
+	uint8_t outbuffer[20];
+	int ret;
+
+	if (maxlen < 64)
+		return -1;
+	ret = 0;
+	hashbuffer = calloc(sizeof(keybuffer) + (msgsize > sizeof(outbuffer) ?
+			    msgsize : sizeof(outbuffer)), 1);
+
+	memset(keybuffer, 0, sizeof(keybuffer));
+
+	if (keysize > sizeof(keybuffer)) {
+		sha512(key, keysize, keybuffer, 0);
+	} else {
+		memcpy(keybuffer, key, keysize);
+	}
+
+	memcpy(hashbuffer, keybuffer, sizeof(keybuffer));
+	apply_padding(hashbuffer, sizeof(keybuffer), 0x36);
+	memcpy(hashbuffer + sizeof(keybuffer), message, msgsize);
+
+	sha1(hashbuffer, sizeof(keybuffer) + msgsize, outbuffer);
+
+	memcpy(hashbuffer, keybuffer, sizeof(keybuffer));
+	apply_padding(hashbuffer, sizeof(keybuffer), 0x5c);
+	memcpy(hashbuffer + sizeof(keybuffer), outbuffer, sizeof(outbuffer));
+
+
+	sha1(hashbuffer, sizeof(keybuffer) + sizeof(outbuffer), dst);
+
+	free(hashbuffer);
+	return ret;
+}
 int run_hmac_tests()
 {
 	uint8_t buffer[64];

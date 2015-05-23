@@ -33,4 +33,8 @@ int calculate_hmac_sha512(const uint8_t * key, size_t keysize,
 			  const uint8_t * message, size_t msgsize,
 			  uint8_t * dst, size_t maxlen);
 
+int calculate_hmac_sha1(const uint8_t * key, size_t keysize,
+			const uint8_t * message, size_t msgsize,
+			uint8_t * dst, size_t maxlen);
+
 #endif /*_HMAC_H_*/
