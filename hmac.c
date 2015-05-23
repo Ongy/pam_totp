@@ -52,9 +52,9 @@ int calculate_hmac_sha512(uint8_t * key, size_t keysize,
 	if (maxlen < 64)
 		return -1;
 	ret = 0;
-	hashbuffer =
-	    calloc(msgsize > sizeof(keybuffer) ?
-		   msgsize + sizeof(keybuffer) : sizeof(keybuffer) * 2, 1);
+	hashbuffer = calloc(sizeof(keybuffer) + (msgsize > sizeof(outbuffer) ?
+			    msgsize : sizeof(outbuffer)), 1);
+
 	memset(keybuffer, 0, sizeof(keybuffer));
 
 	if (keysize > sizeof(keybuffer)) {
