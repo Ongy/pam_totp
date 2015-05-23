@@ -3,11 +3,12 @@ LDFLAGS:=-lpam
 OBJECTS:=main.o sha512.o hmac.o bignum.o
 CFLAGS+=-fPIC -Wall -Wextra -fno-strict-aliasing -g
 
-all: $(TARGET)
+all: $(TARGET) test
 
 clean:
 	-rm -f $(TARGET)
 	-rm $(OBJECTS)
+	-rm -f test test.o
 
 
 fresh: clean all
@@ -19,4 +20,6 @@ debug: $(TARGET)
 
 $(TARGET): $(OBJECTS)
 	ld -x --shared -o $(TARGET) $(LDFLAGS) $(OBJECTS)
-	$(CC) $(LDFLAGS) $(OBJECTS) -o test
+
+test: $(OBJECTS) test.o
+	$(CC) $(LDFLAGS) $(OBJECTS) test.o -o test

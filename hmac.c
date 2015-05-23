@@ -40,9 +40,9 @@ static void apply_padding(uint8_t * data, size_t size, uint8_t pad)
 	}
 }
 
-int calculate_hmac_sha512(uint8_t * key, size_t keysize,
-			   uint8_t * message, size_t msgsize,
-			   uint8_t * dst, size_t maxlen)
+int calculate_hmac_sha512(const uint8_t * key, size_t keysize,
+			  const uint8_t * message, size_t msgsize,
+			  uint8_t * dst, size_t maxlen)
 {
 	uint8_t *hashbuffer;
 	uint8_t keybuffer[128];
