@@ -62,7 +62,6 @@ static void apply_padding(uint8_t * data, size_t size, uint8_t pad)
 	uint64_t *xor64p;
 
 	xor32 = 0;
-	xor64 = 0;
 	xor32p = (uint32_t *) data;
 	xor64p = (uint64_t *) data;
 
@@ -97,6 +96,8 @@ int calculate_hmac_sha512(const uint8_t * key, size_t keysize,
 	int ret;
 
 	if (maxlen < sizeof(outbuffer))
+		return -1;
+	if(key == 0 || message == 0)
 		return -1;
 	ret = 0;
 	hashbuffer = calloc(sizeof(keybuffer) + (msgsize > sizeof(outbuffer) ?
@@ -137,6 +138,8 @@ int calculate_hmac_sha1(const uint8_t * key, size_t keysize,
 	int ret;
 
 	if (maxlen < sizeof(outbuffer))
+		return -1;
+	if(key == 0 || message == 0)
 		return -1;
 	ret = 0;
 	hashbuffer = calloc(sizeof(keybuffer) + (msgsize > sizeof(outbuffer) ?
