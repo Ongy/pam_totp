@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include "util.h"
 #include "totp.h"
+#include "secret.h"
 
 int run_hmac_tests();
 int run_totp_tests();
@@ -33,6 +34,8 @@ int main(int argc, char ** argv)
 	uint8_t buf[20];
 	int seclen;
 	char tok[9];
+	uint8_t sec[20];
+	int i;
 
 	fprintf(stdout, "Starting testsuite for pam_totp\n");
 #ifdef POLARSSL_SELF_TEST
@@ -57,9 +60,16 @@ int main(int argc, char ** argv)
 	}
 	fprintf(stdout, "Utility ok\n");
 
-	/*at the end output the current totp*/
+	/*Some manual output for testing purposes*/
 	seclen = read_base32("77777777", buf, sizeof(buf));
 	get_totp_sha512(buf, seclen, get_time_slice(), tok, sizeof(tok));
 	printf("%s\n", tok);
+	if((seclen = get_secret("ongy", sec, sizeof(sec))) >= 0) {
+		for(i = 0; i < seclen; ++i)
+			printf("%02X", sec[i]);
+		printf("\n");
+	} else {
+		printf("Could not find secret file\n");
+	}
 	return 0;
 }

@@ -1,5 +1,5 @@
-#ifndef _UTIL_H_
-#define _UTIL_H_
+#ifndef _SECRET_H_
+#define _SECRET_H_
 
 /**
  *  This file is part of pam_totp (https://github.com/Ongy/pam_totp)
@@ -25,7 +25,6 @@
 #include <stdint.h>
 #include <unistd.h>
 
-ssize_t read_base32(const char *src, uint8_t * dst, size_t maxlen);
-unsigned get_time_slice();
+ssize_t get_secret(const char *user, uint8_t *buffer, size_t maxlen);
 
-#endif /*_UTIL_H_*/
+#endif /*_SECRET_H_*/

@@ -26,7 +26,7 @@
 
 #define TIME_STEP 30
 
-int read_base32(const char *src, uint8_t * dst, size_t maxlen)
+ssize_t read_base32(const char *src, uint8_t * dst, size_t maxlen)
 {
 	const char * c;
 	char t;
@@ -35,6 +35,7 @@ int read_base32(const char *src, uint8_t * dst, size_t maxlen)
 	uint8_t * tp;
 
 	j = 0;
+	i = 0;
 	tmp = 0;
 	tp = (uint8_t *) &tmp;
 	tp += 3;
@@ -61,10 +62,12 @@ int read_base32(const char *src, uint8_t * dst, size_t maxlen)
 			j = 0;
 		}
 	}
-	if(*c)
+	if(*c) {
 		return -1;
-	if(i * 5 + j > maxlen)
+	}
+	if(i * 5 + j > maxlen) {
 		return -1;
+	}
 	tmp = htobe64(tmp);
 	memcpy(dst + i * 5, tp, j);
 	return i * 5 + j;
@@ -81,6 +84,9 @@ int run_util_tests()
 {
 	uint8_t buffer[16];
 	unsigned ret;
+	ret = read_base32("", buffer, sizeof(buffer));
+	if(ret != 0)
+		return 0;
 	ret = read_base32("77777777", buffer, sizeof(buffer));
 	if(ret != 5 || memcmp(buffer, "\xff\xff\xff\xff\xff", 5))
 		return 0;

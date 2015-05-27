@@ -32,6 +32,7 @@
 
 #include "totp.h"
 #include "util.h"
+#include "secret.h"
 
 #define DEFAULT_USER "nobody"
 
@@ -122,9 +123,9 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 
 	pam_syslog(pamh, LOG_AUTH | LOG_WARNING, "Token: %s\n", buffer);
 
-	user = NULL;
+	seclen = get_secret(user, secret, sizeof(secret));
 
-	seclen = read_base32(SECRET, secret, sizeof(secret));
+	user = NULL;
 
 	retval = is_valid(secret, seclen, slice, totp)
 		 ? PAM_AUTH_ERR : PAM_SUCCESS;
