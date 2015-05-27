@@ -24,6 +24,7 @@
 
 int run_hmac_tests();
 int run_totp_tests();
+int run_util_tests();
 
 int main(int argc, char ** argv)
 {
@@ -41,15 +42,20 @@ int main(int argc, char ** argv)
 	if(!run_hmac_tests()) {
 		fprintf(stderr, "Failed to validate hmac test\n");
 		return -1;
-	} else {
-		fprintf(stdout, "Hmac test ok\n");
 	}
+	fprintf(stdout, "Hmac test ok\n");
+
 	if(!run_totp_tests()) {
 		fprintf(stderr, "Failed to validate totp test\n");
 		return -1;
-	} else {
-		fprintf(stdout, "Totp test ok\n");
 	}
+	fprintf(stdout, "Totp test ok\n");
+
+	if(!run_util_tests()) {
+		fprintf(stderr, "Failed to run utility tests\n");
+		return -1;
+	}
+	fprintf(stdout, "Utility ok\n");
 
 	/*at the end output the current totp*/
 	seclen = read_base32("77777777", buf, sizeof(buf));

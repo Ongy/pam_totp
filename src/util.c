@@ -77,3 +77,13 @@ unsigned get_time_slice()
 	return t / TIME_STEP;
 }
 
+int run_util_tests()
+{
+	uint8_t buffer[16];
+	unsigned ret;
+	ret = read_base32("77777777", buffer, sizeof(buffer));
+	if(ret != 5 || memcmp(buffer, "\xff\xff\xff\xff\xff", 5))
+		return 0;
+
+	return 1;
+}
