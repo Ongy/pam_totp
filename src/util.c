@@ -18,42 +18,35 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include <stdio.h>
+#include <time.h>
 #include "util.h"
-#include "totp.h"
 
-int run_hmac_tests();
-int run_totp_tests();
+#define TIME_STEP 30
 
-int main(int argc, char ** argv)
+int read_base32(const char *src, uint8_t * dst, size_t maxlen)
 {
-	(void) argc;
-	(void) argv;
-	uint8_t buf[20];
-	int seclen;
-	char tok[9];
+	const char * c;
+	unsigned i;
 
-	fprintf(stdout, "Starting testsuite for pam_totp\n");
-#ifdef POLARSSL_SELF_TEST
-	sha512_self_test(1);
-#endif
-
-	if(!run_hmac_tests()) {
-		fprintf(stderr, "Failed to validate hmac test\n");
-		return -1;
-	} else {
-		fprintf(stdout, "Hmac test ok\n");
+	for(c = src; *c && i < maxlen; ++c, ++i) {
+		if(*c >= 'A' && *c <= 'Z')
+			*(dst+i) = *c - 'A';
+		else if (*c >= '2' && *c <= '7')
+			*(dst+i) = *c - '2' + 26;
+		else if(*c >= 'a' && *c <= 'z')
+			*(dst+i) = *c - 'a';
+		else
+			return -1;
 	}
-	if(!run_totp_tests()) {
-		fprintf(stderr, "Failed to validate totp test\n");
+	if(*c)
 		return -1;
-	} else {
-		fprintf(stdout, "Totp test ok\n");
-	}
-
-	/*at the end output the current totp*/
-	seclen = read_base32("77777777", buf, sizeof(buf));
-	get_totp_sha512(buf, seclen, get_time_slice(), tok, sizeof(tok));
-	printf("%s\n", tok);
-	return 0;
+	return i;
 }
+
+unsigned get_time_slice()
+{
+	time_t t;
+	time(&t);
+	return t / TIME_STEP;
+}
+

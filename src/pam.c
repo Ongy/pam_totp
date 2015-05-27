@@ -27,15 +27,13 @@
 #include <time.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <bignum.h>
 #include <string.h>
 #include <syslog.h>
 
 #include "totp.h"
+#include "util.h"
 
 #define DEFAULT_USER "nobody"
-
-#define WINDOW 1
 
 #define TIME_STEP 30
 
@@ -46,14 +44,6 @@
 #define max(x,y) (x) > (y) ? (x) : (y)
 #endif				/*max */
 #define SECRET "77777777"
-
-static int get_time_slice()
-{
-	time_t t;
-	time(&t);
-	return t / TIME_STEP;
-}
-
 
 static int get_otp_token(char *buffer, size_t len,
 			 const struct pam_conv *conv)
@@ -87,49 +77,6 @@ static int get_otp_token(char *buffer, size_t len,
 }
 
 
-static size_t get_hashdata(const char * user, uint8_t * buffer, size_t maxlen)
-{
-	mpi secret;
-	size_t secsize;
-
-	(void) user;
-	mpi_init(&secret);
-	if(mpi_read_string(&secret, 32, SECRET) != 0) {
-		fprintf(stderr, "What?\n");
-		return -1;
-	}
-	if(mpi_size(&secret) <= maxlen) {
-		if(mpi_write_binary(&secret, buffer, maxlen) != 0) {
-			mpi_free(&secret);
-			return -1;
-		}
-	}
-	secsize = mpi_size(&secret);
-	mpi_free(&secret);
-
-	return secsize;
-}
-
-int is_valid_token(const char * user, const char *token)
-{
-	uint8_t buffer[128];
-	char tok[9];
-	size_t len;
-	int i;
-	int slice;
-
-	slice = get_time_slice();
-
-	len = get_hashdata(user, buffer, sizeof(buffer));
-
-	for(i = -WINDOW; i < 0; ++i) {
-		get_totp_sha512(buffer, len, slice + i, tok, sizeof(tok));
-		if(!strcmp(token, tok))
-			return 1;
-	}
-	return 0;
-}
-
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 				   int argc, const char **argv)
 {
@@ -138,6 +85,9 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 	char totp[9];
 	const struct pam_conv *conv;
 	const char *user;
+	unsigned slice;
+	uint8_t secret[128];
+	size_t seclen;
 
 	(void) flags;
 	(void) argc;
@@ -168,16 +118,16 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 		return retval;
 	}
 
+	slice = get_time_slice();
+
 	pam_syslog(pamh, LOG_AUTH | LOG_WARNING, "Token: %s\n", buffer);
-
-	if(!is_valid_token(user, buffer))
-		retval = PAM_AUTH_ERR;
-
-	pam_syslog(pamh, LOG_AUTH | LOG_WARNING, "Hotp: %s\n", totp);
 
 	user = NULL;
 
-	retval = strcmp(SECRET, buffer) ? PAM_AUTH_ERR : PAM_SUCCESS;
+	seclen = read_base32(SECRET, secret, sizeof(secret));
+
+	retval = is_valid(secret, seclen, slice, totp)
+		 ? PAM_AUTH_ERR : PAM_SUCCESS;
 
 	return retval = PAM_SUCCESS;	/*TODO remove for usefulness */
 }

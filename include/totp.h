@@ -24,5 +24,6 @@
 #include <stdint.h>
 int get_totp_sha512(const uint8_t * hashdata, size_t len, uint64_t time,
 		    char * dst, size_t maxlen);
-
+int is_valid(const uint8_t *key, size_t keylen, unsigned time,
+	     const char * token);
 #endif /*_TOTP_H_*/

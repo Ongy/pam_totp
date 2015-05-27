@@ -1,3 +1,6 @@
+#ifndef _UTIL_H_
+#define _UTIL_H_
+
 /**
  *  This file is part of pam_totp (https://github.com/Ongy/pam_totp)
  *
@@ -18,42 +21,11 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include <stdio.h>
-#include "util.h"
-#include "totp.h"
+#include <inttypes.h>
+#include <stdint.h>
+#include <unistd.h>
 
-int run_hmac_tests();
-int run_totp_tests();
+int read_base32(const char *src, uint8_t * dst, size_t maxlen);
+unsigned get_time_slice();
 
-int main(int argc, char ** argv)
-{
-	(void) argc;
-	(void) argv;
-	uint8_t buf[20];
-	int seclen;
-	char tok[9];
-
-	fprintf(stdout, "Starting testsuite for pam_totp\n");
-#ifdef POLARSSL_SELF_TEST
-	sha512_self_test(1);
-#endif
-
-	if(!run_hmac_tests()) {
-		fprintf(stderr, "Failed to validate hmac test\n");
-		return -1;
-	} else {
-		fprintf(stdout, "Hmac test ok\n");
-	}
-	if(!run_totp_tests()) {
-		fprintf(stderr, "Failed to validate totp test\n");
-		return -1;
-	} else {
-		fprintf(stdout, "Totp test ok\n");
-	}
-
-	/*at the end output the current totp*/
-	seclen = read_base32("77777777", buf, sizeof(buf));
-	get_totp_sha512(buf, seclen, get_time_slice(), tok, sizeof(tok));
-	printf("%s\n", tok);
-	return 0;
-}
+#endif /*_UTIL_H_*/
