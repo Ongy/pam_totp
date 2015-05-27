@@ -175,7 +175,8 @@ int run_hmac_tests()
 	uint8_t buffer[64];
 	int ret;
 
-	calculate_hmac_sha1(NULL, 0, NULL, 0, buffer, sizeof(buffer));
+	calculate_hmac_sha1((uint8_t *)"", 0, (uint8_t *)"", 0,
+			    buffer, sizeof(buffer));
 	ret = memcmp(buffer, NULL_TEST_SHA1, 20);
 	if(ret != 0) {
 		fprintf(stderr, "hmac1 failed\n");
@@ -183,7 +184,8 @@ int run_hmac_tests()
 	}
 	fprintf(stdout, "hmac1 test ok\n");
 
-	calculate_hmac_sha512(NULL, 0, NULL, 0, buffer, sizeof(buffer));
+	calculate_hmac_sha512((uint8_t *)"", 0, (uint8_t *)"", 0,
+			      buffer, sizeof(buffer));
 	ret = memcmp(buffer, NULL_TEST_SHA512, sizeof(buffer));
 	if(ret != 0) {
 		fprintf(stderr, "hmac512 null failed\n");
@@ -191,7 +193,7 @@ int run_hmac_tests()
 	}
 	fprintf(stdout, "hmac512 null test ok\n");
 
-	calculate_hmac_sha512((uint8_t *)"key", 3, NULL, 0,
+	calculate_hmac_sha512((uint8_t *)"key", 3, (uint8_t *) "", 0,
 			      buffer, sizeof(buffer));
 	ret = memcmp(buffer, KEY_TEST_SHA512, sizeof(buffer));
 	if(ret != 0) {
