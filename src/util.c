@@ -52,7 +52,6 @@ int read_base32(const char *src, uint8_t * dst, size_t maxlen)
 		tmp |= ((uint64_t) t) << (40 - (++j * 5));
 
 		if(j == 8) {
-			j = 5;
 			if(i * 5 + 5 > maxlen)
 				return -1;
 			tmp = htobe64(tmp);
