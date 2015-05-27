@@ -153,23 +153,39 @@ static int get_totp_sha1(const uint8_t * hashdata, size_t len, uint64_t time,
 
 int run_totp_tests()
 {
+#define SHA1_KEY "12345678901234567890"
+#define SHA1_KEYSIZE strlen(SHA1_KEY)
+#define SHA512_KEY "1234567890123456789012345678901234567890123456789012345678901234"
+#define SHA512_KEYSIZE strlen(SHA512_KEY)
 	uint8_t hash[20];
 	char buffer[9];
 	uint64_t count = 0;
 	int ret;
 
-	calculate_hmac_sha1((uint8_t *)"12345678901234567890", 20,
+	calculate_hmac_sha1((uint8_t *)SHA1_KEY, SHA1_KEYSIZE,
 			    (uint8_t *) &count, sizeof(count), hash, 20);
 	get_truncate(hash, sizeof(hash), buffer, sizeof(buffer));
 	/* We always get 8char values, rfc has a 6char example, so we do +2*/
 	ret = strcmp(buffer+2, "755224");
 	if(ret != 0) {
-		fprintf(stderr, "hotp failed\n");
+		fprintf(stderr, "hotp null failed\n");
 		return 0;
 	}
-	fprintf(stdout, "Hotp test ok\n");
+	fprintf(stdout, "Hotp null test ok\n");
 
-	get_totp_sha1((uint8_t *)"12345678901234567890", 20, 1, buffer,
+	count = be64toh(1);
+	calculate_hmac_sha1((uint8_t *)SHA1_KEY, SHA1_KEYSIZE,
+			    (uint8_t *) &count, sizeof(count), hash, 20);
+	get_truncate(hash, sizeof(hash), buffer, sizeof(buffer));
+	/* We always get 8char values, rfc has a 6char example, so we do +2*/
+	ret = strcmp(buffer+2, "287082");
+	if(ret != 0) {
+		fprintf(stderr, "hotp one failed\n");
+		return 0;
+	}
+	fprintf(stdout, "Hotp one test ok\n");
+
+	get_totp_sha1((uint8_t *)SHA1_KEY, SHA1_KEYSIZE, 1, buffer,
 								sizeof(buffer));
 	ret = strcmp(buffer, "94287082");
 	if(ret != 0) {
@@ -178,7 +194,7 @@ int run_totp_tests()
 	}
 	fprintf(stdout, "Totp sha1 test ok\n");
 
-	get_totp_sha512((uint8_t *)"12345678901234567890", 20, 1, buffer,
+	get_totp_sha512((uint8_t *)SHA512_KEY, SHA512_KEYSIZE, 1, buffer,
 								sizeof(buffer));
 	ret = strcmp(buffer, "90693936");
 	if(ret != 0) {
