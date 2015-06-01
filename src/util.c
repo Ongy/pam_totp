@@ -88,8 +88,14 @@ int run_util_tests()
 	if(ret != 0)
 		return 0;
 	ret = read_base32("77777777", buffer, sizeof(buffer));
-	if(ret != 5 || memcmp(buffer, "\xff\xff\xff\xff\xff", 5))
+	if(ret != 5 || memcmp(buffer, "\xff\xff\xff\xff\xff", 5)) {
+		fprintf(stderr, "Basic base32-read check failed\n");
 		return 0;
-
+	}
+	ret = read_base32("IFBEGRCF", buffer, sizeof(buffer));
+	if(ret != 5 || memcmp(buffer, "ABCDE", 5)) {
+		fprintf(stderr, "Advanced base32-read check failed\n");
+		return 0;
+	}
 	return 1;
 }

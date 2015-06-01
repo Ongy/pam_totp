@@ -13,6 +13,7 @@ clean:
 	-rm -f $(OBJECTS)
 	-rm -f $(TEST)
 	-rm -f $(TEST_OBJECTS)
+	-rm -f $(LIB_OBJECTS)
 
 
 fresh: clean all
