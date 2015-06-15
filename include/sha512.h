@@ -113,7 +113,7 @@ extern "C" {
  * \param is384    0 = use SHA512, 1 = use SHA384
  */
 void sha512( const unsigned char *input, size_t ilen,
-             unsigned char output[64], int is384 );
+             unsigned char output[64]);
 
 /**
  * \brief          Output = SHA-512( file contents )
