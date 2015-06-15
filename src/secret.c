@@ -60,6 +60,7 @@ ssize_t get_secret(const char *user, uint8_t *dst, size_t maxlen)
 	FILE *f;
 	char buffer[512];
 	size_t ret;
+	ssize_t tmp;
 
 	if(!(f = open_file(user)))
 		return -1;
@@ -76,5 +77,6 @@ ssize_t get_secret(const char *user, uint8_t *dst, size_t maxlen)
 	if(buffer[ret - 1] == '\n')
 		buffer[ret - 1] = '\0';
 
-	return read_base32(buffer, dst, maxlen);
+	tmp = read_base32(buffer, dst, maxlen);
+	memset(buffer, 0, sizeof(buffer));
 }

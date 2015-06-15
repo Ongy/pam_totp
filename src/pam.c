@@ -129,7 +129,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * pamh, int flags,
 
 	retval = is_valid(secret, seclen, slice, totp)
 		 ? PAM_AUTH_ERR : PAM_SUCCESS;
-
+	memset(secret, 0, sizeof(secret));
 	return retval = PAM_SUCCESS;	/*TODO remove for usefulness */
 }
 
